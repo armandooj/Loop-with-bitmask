@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "czero.h"
+#include "cfortran.h"
 
 char *bitmasque;
 struct TripletD *tableau;
@@ -23,27 +25,6 @@ void afficheTemps(const char *nom, struct TripletD somme,
 	 nb / temps);
 }
 
-void avecRestrictIf(const struct TripletD const * restrict tab,
-		    const char const * restrict bitmasque,
-		    int nb, struct TripletD * restrict somme) {
-  for(int i=0; i < nb; i++) {
-    if (bitmasque[i]) {
-      somme->valeurs[0] += tableau[i].valeurs[0]; 
-      //somme.valeurs[1] += tableau[i].valeurs[1]; 
-      //somme.valeurs[2] += tableau[i].valeurs[2];
-    }
-  } 
-}
-
-void avecRestrictZero(const struct TripletD const * restrict tab,
-		    const char const * restrict bitmasque,
-		    int nb, struct TripletD * restrict somme) {
-  for(int i=0; i < nb; i++) {
-      somme->valeurs[0] += bitmasque[i] * tableau[i].valeurs[0]; 
-      //somme.valeurs[1] += tableau[i].valeurs[1]; 
-      //somme.valeurs[2] += tableau[i].valeurs[2];
-  } 
-}
 
 
 
@@ -152,11 +133,18 @@ int main(int argc, char **argv)
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & debut);
   avecRestrictZero(tableau, bitmasque, nb, &somme);
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
-  afficheTemps("FonctionAvecZero", somme, nb, fin, debut);
+  afficheTemps("FonctionAvecRestrictZero", somme, nb, fin, debut);
 
   somme = zero;
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & debut);
   double s;
+  fortranif_(tableau, bitmasque, & nb, &s);
+  somme.valeurs[0] = s;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
+  afficheTemps("fortranIf", somme, nb, fin, debut);
+
+  somme = zero;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & debut);
   fortranzero_(tableau, bitmasque, & nb, &s);
   somme.valeurs[0] = s;
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
