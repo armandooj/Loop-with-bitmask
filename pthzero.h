@@ -1,12 +1,19 @@
 #ifndef PTHZERO_H
 #define PTHZERO_H
 
+#include "loopandbitmask.h"
+
 struct pthzero_data {
   const struct TripletD const * restrict tab;
   const char const * restrict bitmasque;
-  int nb, struct TripletD somme;
+  int nb;
+  struct TripletD somme;
 };
 
-#define NBTHREADS (2)
+extern void pthZero(const struct TripletD const * restrict tab,
+		    const char const * restrict bitmasque,
+		    int nb, struct TripletD * restrict somme);
+
+#define NBTHREADS (4)
 
 #endif

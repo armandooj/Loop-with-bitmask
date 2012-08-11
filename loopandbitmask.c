@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "czero.h"
 #include "cfortran.h"
+#include "pthzero.h"
 
 char *bitmasque;
 struct TripletD *tableau;
@@ -150,4 +151,9 @@ int main(int argc, char **argv)
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
   afficheTemps("fortranZero", somme, nb, fin, debut);
 
+  somme = zero;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & debut);
+  pthZero(tableau, bitmasque, nb, &somme);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
+  afficheTemps("pthZero", somme, nb, fin, debut);
 }

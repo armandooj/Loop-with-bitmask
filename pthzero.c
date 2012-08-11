@@ -4,7 +4,7 @@
 #include "assert.h"
 
 static void *pthzero_slave(struct pthzero_data *data) {
-  avecRestrictZero(data.tab, data.bitmasque, data.nb, &data.somme);
+  avecRestrictZero(data->tab, data->bitmasque, data->nb, &data->somme);
   return 0;
 }
 
@@ -15,14 +15,14 @@ void pthZero(const struct TripletD const * restrict tab,
   struct pthzero_data data[NBTHREADS];
   
   for(int i=0; i < NBTHREADS; i++) {
-    data.tab = tab+(nb/NBTHREADS)*i;
-    data.bitmasque = bitmasque +(nb/NBTHREADS) * i;
-    data.nb = (nb/NBTHREADS);
-    data.somme = 0;
+    data[i].tab = tab +(nb/NBTHREADS) *i;
+    data[i].bitmasque = bitmasque +(nb/NBTHREADS) * i;
+    data[i].nb = (nb/NBTHREADS);
+    data[i].somme.valeurs[0] = 0;
   }
   
   for(int i=0; i < NBTHREADS; i++) {
-    pthread_create(& thrs[i], 0, pthzero_slave, (void*) (data+i) );
+    pthread_create(& thrs[i], 0, (void * (*)(void *)) pthzero_slave, (void*) (data+i) );
   }
 
   for(int i=0; i < NBTHREADS; i++) {
@@ -31,7 +31,6 @@ void pthZero(const struct TripletD const * restrict tab,
     assert(resul == 0);
   }
 
-  
   for(int i=0; i < NBTHREADS; i++) {
     somme->valeurs[0] += data[i].somme.valeurs[0];
   }
