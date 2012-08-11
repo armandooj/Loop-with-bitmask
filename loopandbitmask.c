@@ -9,13 +9,49 @@ char *bitmasque;
 struct TripletD *tableau;
 
 
+double diffTemps(struct timespec fin, struct timespec debut) {
+  return 1.0*(fin.tv_sec - debut.tv_sec)+1E-9*(fin.tv_nsec - debut.tv_nsec);
+}
+
+
+void afficheTemps(const char *nom, struct TripletD somme,
+		  int nb, struct timespec fin, struct timespec debut) {
+  double temps = diffTemps(fin, debut);
+  printf("%s: %le; temps %le, acc/s %le\n",
+	 nom, somme.valeurs[0]+somme.valeurs[1]+somme.valeurs[2],
+	 temps,
+	 nb / temps);
+}
+
+void avecRestrictIf(const struct TripletD const * restrict tab,
+		    const char const * restrict bitmasque,
+		    int nb, struct TripletD * restrict somme) {
+  for(int i=0; i < nb; i++) {
+    if (bitmasque[i]) {
+      somme->valeurs[0] += tableau[i].valeurs[0]; 
+      //somme.valeurs[1] += tableau[i].valeurs[1]; 
+      //somme.valeurs[2] += tableau[i].valeurs[2];
+    }
+  } 
+}
+
+void avecRestrictZero(const struct TripletD const * restrict tab,
+		    const char const * restrict bitmasque,
+		    int nb, struct TripletD * restrict somme) {
+  for(int i=0; i < nb; i++) {
+      somme->valeurs[0] += bitmasque[i] * tableau[i].valeurs[0]; 
+      //somme.valeurs[1] += tableau[i].valeurs[1]; 
+      //somme.valeurs[2] += tableau[i].valeurs[2];
+  } 
+}
+
 
 
 int main(int argc, char **argv)
 {
   assert(argc == 2);
   int nb = atoi(argv[1] );
-  struct timespec debut, fin;
+  struct timespec debut, milieu, fin;
   struct TripletD somme = {};
 
   bitmasque = malloc( sizeof(char) * nb);
@@ -36,11 +72,7 @@ int main(int argc, char **argv)
     //somme.valeurs[2] += tableau[i].valeurs[2];
   } 
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
-  double temps = 1.0*(fin.tv_sec - debut.tv_sec)+1E-9*(fin.tv_nsec - debut.tv_nsec);
-  printf("somme0: %le; temps %le, acc/s %le\n",
-	 somme.valeurs[0]+somme.valeurs[1]+somme.valeurs[2],
-	 temps,
-	 nb / temps);
+  afficheTemps("SansBitmask", somme, nb, fin, debut);
 
   struct TripletD zero = {};
   somme = zero;
@@ -53,12 +85,7 @@ int main(int argc, char **argv)
     }
   } 
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
-  temps = 1.0*(fin.tv_sec - debut.tv_sec)+1E-9*(fin.tv_nsec - debut.tv_nsec);
-  printf("somme2: %le; temps %le, acc/s %le\n",
-	 somme.valeurs[0]+somme.valeurs[1]+somme.valeurs[2],
-	 temps,
-	 nb / temps);
-  
+  afficheTemps("avecIf", somme, nb, fin, debut);
 
   somme = zero;
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & debut);
@@ -82,15 +109,9 @@ int main(int argc, char **argv)
       if (bitmasque[i+3]) somme.valeurs[0] += d;
   } 
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
-  temps = 1.0*(fin.tv_sec - debut.tv_sec)+1E-9*(fin.tv_nsec - debut.tv_nsec);
-  printf("somme3: %le; temps %le, acc/s %le\n",
-	 somme.valeurs[0]+somme.valeurs[1]+somme.valeurs[2],
-	 temps,
-	 nb / temps);
+  afficheTemps("deroule4", somme, nb, fin, debut);
 
   somme = zero;
-
-
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & debut);
   double *dense = malloc( sizeof(double) * nb );
   int pos;
@@ -101,17 +122,15 @@ int main(int argc, char **argv)
     }
   }
 
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & milieu);
   for(int i=0; i < pos; i++) {
       somme.valeurs[0] += dense[i]; 
       //somme.valeurs[1] += tableau[i].valeurs[1]; 
       //somme.valeurs[2] += tableau[i].valeurs[2];
   } 
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
-  temps = 1.0*(fin.tv_sec - debut.tv_sec)+1E-9*(fin.tv_nsec - debut.tv_nsec);
-  printf("somme4: %le; temps %le, acc/s %le\n",
-	 somme.valeurs[0]+somme.valeurs[1]+somme.valeurs[2],
-	 temps,
-	 nb / temps);
+  afficheTemps("CopyDense", somme, nb, fin, debut);
+  afficheTemps("Dense", somme, nb, fin, milieu);
 
   somme = zero;
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & debut);
@@ -121,12 +140,26 @@ int main(int argc, char **argv)
       //somme.valeurs[2] += tableau[i].valeurs[2];
   } 
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
-  temps = 1.0*(fin.tv_sec - debut.tv_sec)+1E-9*(fin.tv_nsec - debut.tv_nsec);
-  printf("somme5: %le; temps %le, acc/s %le\n",
-	 somme.valeurs[0]+somme.valeurs[1]+somme.valeurs[2],
-	 temps,
-	 nb / temps);
-  
+  afficheTemps("MultiplicationParZero", somme, nb, fin, debut);
 
+  somme = zero;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & debut);
+  avecRestrictIf(tableau, bitmasque, nb, &somme);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
+  afficheTemps("FonctionAvecRestrictIf", somme, nb, fin, debut);
+
+  somme = zero;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & debut);
+  avecRestrictZero(tableau, bitmasque, nb, &somme);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
+  afficheTemps("FonctionAvecZero", somme, nb, fin, debut);
+
+  somme = zero;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & debut);
+  double s;
+  fortranzero_(tableau, bitmasque, & nb, &s);
+  somme.valeurs[0] = s;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
+  afficheTemps("fortranZero", somme, nb, fin, debut);
 
 }
