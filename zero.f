@@ -11,6 +11,19 @@
 	enddo
 	end
 
+	subroutine fortranBlocZero(tab, bitmasque, nb, somme)
+	implicit none
+	integer, intent(in) :: nb
+	real*4, dimension(nb) :: tab
+	integer*1, dimension(nb) :: bitmasque
+	real*8, intent(out) :: somme
+	integer :: i
+	somme = 0
+	do i=1,nb
+	   somme = somme + bitmasque(i) * tab(i); 
+	enddo
+	end
+
 
 	subroutine fortranIf(tab, bitmasque, nb, somme)
 	implicit none

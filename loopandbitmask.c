@@ -7,6 +7,7 @@
 #include "czero.h"
 #include "cfortran.h"
 #include "pthzero.h"
+#include "bloczero.h"
 
 char *bitmasque;
 struct TripletD *tableau;
@@ -156,4 +157,32 @@ int main(int argc, char **argv)
   pthZero(tableau, bitmasque, nb, &somme);
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
   afficheTemps("pthZero", somme, nb, fin, debut);
+
+
+  float *bloc= malloc(  sizeof(float) * nb );
+  float *blocbit= malloc(  sizeof(float) * nb );
+  for(int i=0;i<nb;i++) {
+    bloc[i] = tableau[i].valeurs[0];
+    blocbit[i] = bitmasque[i];
+  }
+
+  somme = zero;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & debut);
+  avecRestrictBlocZeroF(bloc, bitmasque, nb, &somme);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
+  afficheTemps("blocZeroF", somme, nb, fin, debut);
+
+  somme = zero;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & debut);
+  avecRestrictBlocVectorZeroF(bloc, blocbit, nb, &somme);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
+  afficheTemps("blocVectorZeroF", somme, nb, fin, debut);
+
+  somme = zero;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & debut);
+  fortranbloczero_(bloc, bitmasque, & nb, &s);
+  somme.valeurs[0] = s;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, & fin); 
+  afficheTemps("fortranBlocZero", somme, nb, fin, debut);
+
 }

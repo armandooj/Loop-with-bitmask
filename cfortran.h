@@ -4,6 +4,11 @@
 void fortranzero_ (const struct TripletD const * restrict tab,
 		   const char const * restrict bitmasque,
 		   int *nb, double *somme);
+
+void fortranbloczero_ (const float const * restrict tab,
+		       const char const * restrict bitmasque,
+		       int *nb, double *somme);
+
 void fortranif_ (const struct TripletD const * restrict tab,
 		 const char const * restrict bitmasque,
 		 int *nb, double *somme);
