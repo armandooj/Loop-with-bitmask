@@ -17,3 +17,6 @@ profile: clean loopandbitmask
 
 probabilities: CLAFGS+= -fbranch-probabilities
 probabilities: clean loopandbitmask 
+
+clean-profile:
+	rm -f *.gcda
