@@ -1,6 +1,13 @@
 
-CFLAGS=-std=gnu11 -O3 -funroll-all-loops -fbranch-probabilities
-LDLIBS=-lrt 
+CFLAGS=-std=gnu11 -O3 
+#-funroll-all-loops -fbranch-probabilities
+#LDLIBS=-lrt 
+
+OS := $(shell uname -s)
+ifeq ($(OS), Linux)
+LDLIBS += -lrt
+endif
+
 FC=gfortran
 FFLAGS=-O3 -funroll-all-loops -fbranch-probabilities
 
