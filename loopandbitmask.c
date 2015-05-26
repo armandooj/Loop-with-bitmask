@@ -4,12 +4,14 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "czero.h"
-#include "cfortran.h"
-#include "pthzero.h"
-#include "bloczero.h"
+// #include "czero.h"
+// #include "cfortran.h"
+// #include "pthzero.h"
+// #include "bloczero.h"
 
 #include "getCPUTime.c"
+#include "fvec.h"
+#include "dvec.h"
 
 char *bitmasque;
 struct TripletD *tableau;
@@ -47,8 +49,8 @@ int main(int argc, char **argv)
   double debut, milieu, fin;
   struct TripletD somme = {};
 
-  bitmasque = malloc(sizeof(char) * nb);
-  tableau = malloc(sizeof(struct TripletD) * nb);
+  bitmasque =(char *) malloc(sizeof(char) * nb);
+  tableau = (struct TripletD *) malloc(sizeof(struct TripletD) * nb);
   
   for(int i=0; i < nb; i++) {
     bitmasque[i] = (drand48() < 0.5) ? 1 : 0;
@@ -71,13 +73,40 @@ int main(int argc, char **argv)
   debut = getCPUTime();
   for(int i=0; i < nb; i++) {
     if (bitmasque[i]) {
-      somme.valeurs[0] += tableau[i].valeurs[0]; 
+      somme.valeurs[0] += tableau[i].valeurs[0];
       //somme.valeurs[1] += tableau[i].valeurs[1]; 
       //somme.valeurs[2] += tableau[i].valeurs[2];
     }
   } 
   fin = getCPUTime();
   afficheTemps("avecIf", somme, nb, fin, debut);
+
+  // Is32vec2 X(4, 0);
+  // Is32vec2 Y(4, 4);
+  // Is32vec2 res = cmpeq(X, Y);
+
+  // int res1 = res[0];
+  // int res2 = res[1];
+  // _mm_empty();
+
+  somme = zero;
+  debut = getCPUTime();
+  Is32vec2 A, B, R; 
+
+  for(int i=0; i < nb; i++) {
+
+    Is32vec2 A(1, 0);
+    Is32vec2 B(bitmasque[i], 0);
+    Is32vec2 R = cmpeq(A, B);
+    _mm_empty();
+
+    if (R[0] < 0 && R[1] < 0) {
+      somme.valeurs[0] += tableau[i].valeurs[0];
+      //somme.valeurs[0] += (tableau[i].valeurs[0] * bitmasque[i]);
+    }
+  }
+  fin = getCPUTime();
+  afficheTemps("Armando", somme, nb, fin, debut);
 
   somme = zero;
   debut = getCPUTime();
@@ -103,95 +132,95 @@ int main(int argc, char **argv)
   fin = getCPUTime();
   afficheTemps("deroule4", somme, nb, fin, debut);
 
-  somme = zero;
-  debut = getCPUTime();
-  double *dense = malloc(sizeof(double) * nb);
-  int pos;
-  for(int i=0;i<nb;i++) {
-    if (bitmasque[i]) {
-      dense[pos] = tableau[i].valeurs[0];
-      pos ++;
-    }
-  }
+  // somme = zero;
+  // debut = getCPUTime();
+  // double *dense = (double *) malloc(sizeof(double) * nb);
+  // int pos;
+  // for(int i=0;i<nb;i++) {
+  //   if (bitmasque[i]) {
+  //     dense[pos] = tableau[i].valeurs[0];
+  //     pos ++;
+  //   }
+  // }
 
-  milieu = getCPUTime();
-  for(int i=0; i < pos; i++) {
-      somme.valeurs[0] += dense[i]; 
-      //somme.valeurs[1] += tableau[i].valeurs[1]; 
-      //somme.valeurs[2] += tableau[i].valeurs[2];
-  } 
-  fin = getCPUTime();
-  afficheTemps("CopyDense", somme, nb, fin, debut);
-  afficheTemps("Dense", somme, nb, fin, milieu);
+  // milieu = getCPUTime();
+  // for(int i=0; i < pos; i++) {
+  //     somme.valeurs[0] += dense[i]; 
+  //     //somme.valeurs[1] += tableau[i].valeurs[1]; 
+  //     //somme.valeurs[2] += tableau[i].valeurs[2];
+  // } 
+  // fin = getCPUTime();
+  // afficheTemps("CopyDense", somme, nb, fin, debut);
+  // afficheTemps("Dense", somme, nb, fin, milieu);
 
-  somme = zero;
-  debut = getCPUTime();
-  for(int i=0; i < nb; i++) {
-    somme.valeurs[0] += bitmasque[i] * tableau[i].valeurs[0]; 
-      //somme.valeurs[1] += tableau[i].valeurs[1]; 
-      //somme.valeurs[2] += tableau[i].valeurs[2];
-  } 
-  fin = getCPUTime();
-  afficheTemps("MultiplicationParZero", somme, nb, fin, debut);
+  // somme = zero;
+  // debut = getCPUTime();
+  // for(int i=0; i < nb; i++) {
+  //   somme.valeurs[0] += bitmasque[i] * tableau[i].valeurs[0]; 
+  //     //somme.valeurs[1] += tableau[i].valeurs[1]; 
+  //     //somme.valeurs[2] += tableau[i].valeurs[2];
+  // } 
+  // fin = getCPUTime();
+  // afficheTemps("MultiplicationParZero", somme, nb, fin, debut);
 
-  somme = zero;
-  debut = getCPUTime();
-  avecRestrictIf(tableau, bitmasque, nb, &somme);
-  fin = getCPUTime();
-  afficheTemps("FonctionAvecRestrictIf", somme, nb, fin, debut);
+  // somme = zero;
+  // debut = getCPUTime();
+  // avecRestrictIf(tableau, bitmasque, nb, &somme);
+  // fin = getCPUTime();
+  // afficheTemps("FonctionAvecRestrictIf", somme, nb, fin, debut);
 
-  somme = zero;
-  debut = getCPUTime();
-  avecRestrictZero(tableau, bitmasque, nb, &somme);
-  fin = getCPUTime();
-  afficheTemps("FonctionAvecRestrictZero", somme, nb, fin, debut);
+  // somme = zero;
+  // debut = getCPUTime();
+  // avecRestrictZero(tableau, bitmasque, nb, &somme);
+  // fin = getCPUTime();
+  // afficheTemps("FonctionAvecRestrictZero", somme, nb, fin, debut);
 
-  somme = zero;
-  debut = getCPUTime();
-  double s;
-  fortranif_(tableau, bitmasque, & nb, &s);
-  somme.valeurs[0] = s;
-  fin = getCPUTime();
-  afficheTemps("fortranIf", somme, nb, fin, debut);
+  // somme = zero;
+  // debut = getCPUTime();
+  // double s;
+  // fortranif_(tableau, bitmasque, & nb, &s);
+  // somme.valeurs[0] = s;
+  // fin = getCPUTime();
+  // afficheTemps("fortranIf", somme, nb, fin, debut);
 
-  somme = zero;
-  debut = getCPUTime();
-  fortranzero_(tableau, bitmasque, & nb, &s);
-  somme.valeurs[0] = s;
-  fin = getCPUTime();
-  afficheTemps("fortranZero", somme, nb, fin, debut);
+  // somme = zero;
+  // debut = getCPUTime();
+  // fortranzero_(tableau, bitmasque, & nb, &s);
+  // somme.valeurs[0] = s;
+  // fin = getCPUTime();
+  // afficheTemps("fortranZero", somme, nb, fin, debut);
 
-  somme = zero;
-  debut = getCPUTime();
-  pthZero(tableau, bitmasque, nb, &somme);
-  fin = getCPUTime();
-  afficheTemps("pthZero", somme, nb, fin, debut);
+  // somme = zero;
+  // debut = getCPUTime();
+  // pthZero(tableau, bitmasque, nb, &somme);
+  // fin = getCPUTime();
+  // afficheTemps("pthZero", somme, nb, fin, debut);
 
 
-  float *bloc= malloc(  sizeof(float) * nb );
-  float *blocbit= malloc(  sizeof(float) * nb );
-  for(int i=0;i<nb;i++) {
-    bloc[i] = tableau[i].valeurs[0];
-    blocbit[i] = bitmasque[i];
-  }
+  // float *bloc= malloc(  sizeof(float) * nb );
+  // float *blocbit= malloc(  sizeof(float) * nb );
+  // for(int i=0;i<nb;i++) {
+  //   bloc[i] = tableau[i].valeurs[0];
+  //   blocbit[i] = bitmasque[i];
+  // }
 
-  somme = zero;
-  debut = getCPUTime();
-  avecRestrictBlocZeroF(bloc, bitmasque, nb, &somme);
-  fin = getCPUTime();
-  afficheTemps("blocZeroF", somme, nb, fin, debut);
+  // somme = zero;
+  // debut = getCPUTime();
+  // avecRestrictBlocZeroF(bloc, bitmasque, nb, &somme);
+  // fin = getCPUTime();
+  // afficheTemps("blocZeroF", somme, nb, fin, debut);
 
-  somme = zero;
-  debut = getCPUTime();
-  avecRestrictBlocVectorZeroF(bloc, blocbit, nb, &somme);
-  fin = getCPUTime();
-  afficheTemps("blocVectorZeroF", somme, nb, fin, debut);
+  // somme = zero;
+  // debut = getCPUTime();
+  // avecRestrictBlocVectorZeroF(bloc, blocbit, nb, &somme);
+  // fin = getCPUTime();
+  // afficheTemps("blocVectorZeroF", somme, nb, fin, debut);
 
-  somme = zero;
-  debut = getCPUTime();
-  fortranbloczero_(bloc, bitmasque, & nb, &s);
-  somme.valeurs[0] = s;
-  fin = getCPUTime();
-  afficheTemps("fortranBlocZero", somme, nb, fin, debut);
+  // somme = zero;
+  // debut = getCPUTime();
+  // fortranbloczero_(bloc, bitmasque, & nb, &s);
+  // somme.valeurs[0] = s;
+  // fin = getCPUTime();
+  // afficheTemps("fortranBlocZero", somme, nb, fin, debut);
 
 }
